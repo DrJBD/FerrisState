@@ -1,111 +1,172 @@
 """This script serves as a template for a Python program that includes a main function."""
-from Concentration import Concentration # Importing the Concentration class from Concentration.py
+import sys
+from pprint import pprint
 
-def ser_thf_to_ch2thf_gly(ser, thf):
+# COMPOUNDS using variable names instead of strings to avoid future typo errors.
+# These constants will never change so 'global' is not needed.
+SER = 'SER'
+THF = 'THF'
+NADPP = 'NADP+'
+ATP = 'ATP'
+CH2THF = 'CH2THF'
+GLY = 'GLY'
+FORMATE = 'Formate'
+ADP = 'ADP'
+CHOTHF = 'CHOTHF'
+CHPTHF = 'CH+THF'
+NADP1P = 'NADP1+'
+
+def mito_ser_thf_to_ch2thf_gly(pool, step, step_timespan):
     """
     This function represents the first step in a biochemical pathway.
     It converts SER and THF into CH2THF and GLY.
 
     Step 1: [SER] + [THF] <--> [CH2THF] + [GLY]
     """
-    print('ser_thf_to_ch2thf_gly')  # Placeholder for the actual implementation
-    print(ser)
-    print(thf)
+    ser = pool[SER]  # Retrieve SER from the pool
+    thf = pool[THF]  # Retrieve THF from the pool
+    ch2thf = pool[CH2THF]  # Retrieve CH2THF from the pool
+    gly = pool[GLY]  # Retrieve GLY from the pool
+    print(' ', sys._getframe().f_code.co_name)
+    print('    ser:', ser, ' thf:', thf, ' ch2thf:', ch2thf, ' gly:', gly)
 
-    # DO: MATH
+    # DO: XHESIKA MATH
+    ser = ser - 0.1  # Example decrement for SER
+    thf = thf - 0.1  # Example decrement for THF
+    ch2thf = ch2thf + 0.1  # Example increment for CH2THF
+    gly = gly + 0.1  # Example increment for GLY
 
-    ch2thf = Concentration('CH2THF', 0.1)  # Example concentration for CH2THF
-    gly = Concentration('GLY', 0.1)  # Example concentration for GLY
+    pool[SER] = ser
+    pool[THF] = thf
+    pool[CH2THF] = ch2thf
+    pool[GLY] = gly
 
-    print(ch2thf)
-    print(gly, '\n')
-    return ch2thf, gly  # Return the new concentrations as a tuple
+    print('    ser:', ser, ' thf:', thf, ' ch2thf:', ch2thf, ' gly:', gly)
+    return
 
 
-def ch2thf_to_ch_plus_thf_nadp(ch2thf, nadpp):
+def mito_ch2thf_nadpp_to_chpthf_nadp(pool, step, step_timespan):
     """
     This function represents the second step in a biochemical pathway.
     It converts CH2THF and NADP+ into CH+THF and NADP1+.
 
     Step 2a: [CH2THF] + [NADP+] <--> [CH+THF] + [NADP1+]
     """
-    print('ch2thf_to_ch_plus_thf_nadp')  # Placeholder for the actual implementation
-    print(ch2thf)
-    print(nadpp)
+    ch2thf = pool[CH2THF]  # Retrieve CH2THF from the pool
+    nadpp = pool[NADPP]  # Retrieve NADP+ from the pool
+    chpthf = pool[CHPTHF]  # Retrieve CH+THF from the pool
+    nadp1p = pool[NADP1P]  # Retrieve NADP1+ from the pool
+    print(' ', sys._getframe().f_code.co_name)
+    print('    ch2thf:', ch2thf, ' nadpp:', nadpp, ' chpthf:', chpthf, ' nadp1p:', nadp1p)
 
-    # DO: MATH
+    # DO: XHESIKA MATH
+    ch2thf -= 0.1  # Example decrement for CH2THF
+    nadpp -= 0.1  # Example decrement for NADP+
+    chpthf += 0.1  # Example increment for CH+THF
+    nadp1p += 0.1  # Example increment for NADP1+
 
-    chpthf = Concentration('CH+THF', 0.1)  # Example concentration for CH+THF
-    nadp1 = Concentration('NADP1+', 0.1)  # Example concentration for NADP1+
+    pool[CH2THF] = ch2thf
+    pool[NADPP] = nadpp
+    pool[CHPTHF] = chpthf
+    pool[NADP1P] = nadp1p
+    print('    ch2thf:', ch2thf, ' nadpp:', nadpp, ' chpthf:', chpthf, ' nadp1p:', nadp1p)
+    return
 
-    print(chpthf)
-    print(nadp1, '\n')
-    return chpthf, nadp1  # Return the new concentrations as a tuple
 
-
-def ch_plus_thf_to_chothf(chpthf):
+def mito_chpthf_to_chothf(pool, step, step_timespan):
     """
     This function represents the second part of the second step in a biochemical pathway.
     It converts CH+THF into CHOTHF.
 
     Step 2b: [CH+THF] <--> [CHOTHF]
     """
-    print('ch_plus_thf_to_chothf')  # Placeholder for the actual implementation
-    print('CH+THF:', chpthf)
+    chpthf = pool[CHPTHF]  # Retrieve CH+THF from the pool
+    chothf = pool[CHOTHF]  # Retrieve CHOTHF from the pool
+    print(' ', sys._getframe().f_code.co_name)
+    print('    chpthf:', chpthf, ' chothf:', chothf)
 
-    # DO: MATH
+    # DO: XHESIKA MATH
+    chpthf -= 0.1  # Example decrement for CH+THF
+    chothf += 0.1  # Example increment for CHOTHF
 
-    chothf = Concentration('CHOTHF', 0.1)  # Example concentration for CHOTHF
+    pool[CHPTHF] = chpthf
+    pool[CHOTHF] = chothf
+    print('    chpthf:', chpthf, ' chothf:', chothf)
+    return
 
-    print(chothf, '\n')
-    return chothf  # Return the new concentration of CHOTHF
 
-
-def chothf_atp_to_formate_adp(chothf, atp):
+def mito_chothf_atp_to_formate_adp(pool, step, step_timespan):
     """
     This function represents the third step in a biochemical pathway.
     It converts CHOTHF and ATP into Formate and ADP.
 
     Step 3: [CHOTHF] + [ATP] <--> [Formate] + [ADP]
     """
-    print('chothf_atp_to_formate_adp')  # Placeholder for the actual implementation
-    print(chothf)
-    print(atp)
+    chothf = pool[CHOTHF]  # Retrieve CHOTHF from the pool
+    atp = pool[ATP]  # Retrieve ATP from the pool
+    formate = pool[FORMATE]  # Retrieve Formate from the pool
+    adp = pool[ADP]  # Retrieve ADP from the pool
+    print(' ', sys._getframe().f_code.co_name)
+    print('    chothf:', chothf, ' atp:', atp, ' formate:', formate, ' adp:', adp)
 
-    # DO: MATH
+    # DO: XHESIKA MATH
+    chothf -= 0.1  # Example decrement for CHOTHF
+    atp -= 0.1  # Example decrement for ATP
+    formate += 0.1  # Example increment for Formate
+    adp += 0.1  # Example increment for ADP
 
-    formate = Concentration('Formate', 0.1)  # Example concentration for Formate
-    adp = Concentration('ADP', 0.1)  # Example concentration for ADP
-
-    print(formate)
-    print(adp, '\n')
-    return formate, adp  # Return the new concentrations as a tuple
+    pool[CHOTHF] = chothf
+    pool[ATP] = atp
+    pool[FORMATE] = formate
+    pool[ADP] = adp
+    print('    chothf:', chothf, ' atp:', atp, ' formate:', formate, ' adp:', adp)
+    return
 
 
 def main():
     """
     This is the main function that will be executed when the script is run.
     """
-    print('[main]')
+    experiment_runtime = 0.1 # Experiment time in seconds
+    experiment_timesteps = 4  # Resolution for the simulation
+    step_timespan = experiment_runtime / experiment_timesteps
 
-    # Step 1: [SER] + [THF] <--> [CH2THF] + [GLY]
-    ser = Concentration('SER', 0.1)  # Example concentration for SER
-    thf = Concentration('THF', 0.1)  # Example concentration for THF
-    ch2thf, gly = ser_thf_to_ch2thf_gly(ser, thf)
+    # Initialize a pool of compounds with their concentrations
+    mito_pool = {
+        SER : 0.1,
+        THF : 0.1,
+        NADPP : 0.1,
+        ATP : 0.1,
+        CH2THF : 0.0,
+        GLY : 0.0,
+        FORMATE : 0.0,
+        ADP : 0.0,
+        CHOTHF : 0.0,
+        CHPTHF : 0.0,
+        NADP1P : 0.0
+    }
 
-    # Step 2a: [CH2THF] + [NADP+] <--> [CH+THF] + [NADP1+]
-    # CH2THF was an output from Step 1.
-    nadpp = Concentration('NADP+', 0.1)  # Example concentration for NADP+
-    chpthf, nadp1 = ch2thf_to_ch_plus_thf_nadp(ch2thf, nadpp)
+    print('Initial concentrations:')
+    pprint(mito_pool)
+    print()
 
-    # Step 2b: [CH+THF] <--> [CHOTHF]
-    # chpthf was an output from Step 2a.
-    chothf = ch_plus_thf_to_chothf(chpthf)
+    for step in range(0, experiment_timesteps):
+        print('Step:', step, ' Timespan:', step_timespan)
+        # Step 1: [SER] + [THF] <--> [CH2THF] + [GLY]
+        mito_ser_thf_to_ch2thf_gly(mito_pool, step, step_timespan)
 
-    # Step 3: [CHOTHF] + [ATP] <--> [Formate] + [ADP]
-    # chothf was an output from Step 2b.
-    atp = Concentration('ATP', 0.1)  # Example concentration for ATP
-    formate, adp = chothf_atp_to_formate_adp(chothf, atp)
+        # Step 2a: [CH2THF] + [NADP+] <--> [CH+THF] + [NADP1+]
+        mito_ch2thf_nadpp_to_chpthf_nadp(mito_pool, step, step_timespan)
+
+        # Step 2b: [CH+THF] <--> [CHOTHF]
+        mito_chpthf_to_chothf(mito_pool, step, step_timespan)
+
+        # Step 3: [CHOTHF] + [ATP] <--> [Formate] + [ADP]
+        mito_chothf_atp_to_formate_adp(mito_pool, step, step_timespan)
+        print()
+
+    print('Final concentrations after the experiment:')
+    pprint(mito_pool)
 
 # Execute the main function
 main()
