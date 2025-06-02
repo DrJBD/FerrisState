@@ -17,21 +17,7 @@ CHPTHF = 'CH+THF'
 NADPH = 'NADPH'
 H2O = 'H2O'
 
-def mito_ser_thf_to_ch2thf_gly(pool, step, step_timespan):
-    """
-    This function represents the first step in a biochemical pathway.
-    It converts SER and THF into CH2THF and GLY.
-
-    Step 1: [SER] + [THF] <--> [CH2THF] + [GLY]
-    """
-    ser = pool[SER]  # Retrieve SER from the pool
-    thf = pool[THF]  # Retrieve THF from the pool
-    ch2thf = pool[CH2THF]  # Contribute CH2THF to the pool
-    gly = pool[GLY]  # Contribute GLY to the pool
-    print(' ', sys._getframe().f_code.co_name)
-    print('    ser:', ser, ' thf:', thf, ' ch2thf:', ch2thf, ' gly:', gly)
-
-def two_substrate_mm(A, B, Km_A, Km_B):
+def two_substrate_mm(A, B, Km_A, Km_B, Vmax):
     """
     This function computes the rate for a two-substrate reaction
     A: Concentration of substrate A
@@ -41,18 +27,26 @@ def two_substrate_mm(A, B, Km_A, Km_B):
     """
     return (Vmax * A * B) / (Km_A * B + Km_B * A + A * B)
 
+def mito_ser_thf_to_ch2thf_gly(pool, step, step_timespan):
+    """
+    This function represents the first step in a biochemical pathway.
+    It converts SER and THF into CH2THF and GLY.
 
-    # DO: XHESIKA MATH
+    Step 1: [SER] + [THF] <--> [CH2THF] + [GLY]
+    """
+    print(' ', sys._getframe().f_code.co_name)
+    print('    ser:', pool[SER], ' thf:', pool[THF], ' ch2thf:', pool[CH2THF], ' gly:', pool[GLY])
 
-#Constants for enzyme kinetics
+    A = pool[SER]  # Retrieve SER from the pool
+    B = pool[THF]  # Retrieve THF from the pool
+
+    #Constants for enzyme kinetics
     Vmax_1 = 1.0
     Km_ser = 0.05
     Km_thf = 0.05
 
-#Caculate rate using two substrate MM Equation
-    A = pool[SER]
-    B = pool[THF]
-    rate_1 = two_substrate_mm(A, B, Km_ser, Km_thf)
+    #Caculate rate using two substrate MM Equation
+    rate_1 = two_substrate_mm(A, B, Km_ser, Km_thf, Vmax_1)
     delta_1 = rate_1 * step_timespan
 
     pool[SER] -= delta_1
@@ -60,17 +54,7 @@ def two_substrate_mm(A, B, Km_A, Km_B):
     pool[CH2THF] += delta_1
     pool[GLY] += delta_1
 
-    ser = ser - 0.1  # Example decrement for SER
-    thf = thf - 0.1  # Example decrement for THF
-    ch2thf = ch2thf + 0.1  # Example increment for CH2THF
-    gly = gly + 0.1  # Example increment for GLY
-
-    pool[SER] = ser
-    pool[THF] = thf
-    pool[CH2THF] = ch2thf
-    pool[GLY] = gly
-
-    print('    ser:', ser, ' thf:', thf, ' ch2thf:', ch2thf, ' gly:', gly)
+    print('    ser:', pool[SER], ' thf:', pool[THF], ' ch2thf:', pool[CH2THF], ' gly:', pool[GLY])
     return
 
 
