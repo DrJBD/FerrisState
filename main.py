@@ -10,6 +10,7 @@ NADPP = 'NADP+'
 ATP = 'ATP'
 CH2THF = 'CH2THF'
 GLY = 'GLY'
+H_PLUS = 'H+'
 FORMATE = 'Formate'
 ADP = 'ADP'
 CHOTHF = 'CHOTHF'
@@ -63,25 +64,21 @@ def mito_ch2thf_nadpp_to_chpthf_nadp(pool, step, step_timespan):
     This function represents the second step in a biochemical pathway.
     It converts CH2THF and NADP+ into CH+THF and NADPH.
 
-    Step 2a: [CH2THF] + [NADP+] <--> [CH+THF] + [NADPH]
+    Step 2a: [CH2THF] + [NADP+] <--> [CH+THF] + [NADPH] 
     """
-    ch2thf = pool[CH2THF]  # Retrieve CH2THF from the pool
-    nadpp = pool[NADPP]  # Retrieve NADP+ from the pool
-    chpthf = pool[CHPTHF]  # Contribute CH+THF from the pool
-    nadph = pool[NADPH]  # Contribute NADPH from the pool
     print(' ', sys._getframe().f_code.co_name)
-    print('    ch2thf:', ch2thf, ' nadpp:', nadpp, ' chpthf:', chpthf, ' nadph:', nadph)
+    print('    ch2thf:', pool[CH2THF], ' nadpp:', pool[NADPP], ' chpthf:', pool[CHPTHF], ' nadph:', pool[NADPH])
 
-    # DO: XHESIKA MATH
-
+    A = pool[CH2THF]
+    B = pool[NADPP]
+    
+    #Constants for enzyme kinetics
     Vmax_2a = 1.0
     Km_ch2thf = 0.05
     Km_nadpp = 0.05
 
     # Calculate rate using two substrate MM equation
-    A = pool[CH2THF]
-    B = pool[NADPP]
-    rate_2a = two_substrate_mm(pool[CH2THF], pool[NADPP], Vmax_2a, Km_ch2thf, Km_nadpp)
+    rate_2a = two_substrate_mm(A, B, Vmax_2a, Km_ch2thf, Km_nadpp)
     delta_2a = rate_2a * step_timespan
 
     # New concentrations as reaction proceeds
@@ -89,18 +86,8 @@ def mito_ch2thf_nadpp_to_chpthf_nadp(pool, step, step_timespan):
     pool[NADPP] -= delta_2a
     pool[CHPTHF] += delta_2a
     pool[NADPH] += delta_2a
-
-
-    ch2thf -= 0.1  # Example decrement for CH2THF
-    nadpp -= 0.1  # Example decrement for NADP+
-    chpthf += 0.1  # Example increment for CH+THF
-    nadph += 0.1  # Example increment for NADPH
-
-    pool[CH2THF] = ch2thf
-    pool[NADPP] = nadpp
-    pool[CHPTHF] = chpthf
-    pool[NADPH] = nadph
-    print('    ch2thf:', ch2thf, ' nadpp:', nadpp, ' chpthf:', chpthf, ' nadph:', nadph)
+    
+    print('    ch2thf:', pool[CH2THF], ' nadpp:', pool[NADPP], ' chpthf:', pool[CHPTHF], ' nadph:', pool[NADPH])
     return
 
 
@@ -109,37 +96,29 @@ def mito_chpthf_to_chothf(pool, step, step_timespan):
     This function represents the second part of the second step in a biochemical pathway.
     It converts CH+THF into CHOTHF.
 
-    Step 2b: [CH+THF] <--> [CHOTHF]
+    Step 2b: [CH+THF] + [H2O] <--> [CHOTHF] + [H+]
     """
-    chpthf = pool[CHPTHF]  # Retrieve CH+THF from the pool
-    chothf = pool[CHOTHF]  # Retrieve CHOTHF from the pool
     print(' ', sys._getframe().f_code.co_name)
-    print('    chpthf:', chpthf, ' chothf:', chothf)
-
-    # DO: XHESIKA MATH
-
+    print('    chpthf:', pool[CHPTHF], ' h2o:', pool[H2O], ' chothf:', pool[CHOTHF], ' h_plus:', pool[H_PLUS]) 
+    
     Vmax_2b = 1.0
     Km_chpthf = 0.05
     Km_h2o = 0.05
-
-    # Calculate rate using two substrate MM equation
+    
     A = pool[CHPTHF]
     B = pool[H2O]
-    rate_2b = two_substrate_mm(pool[CHPTHF], pool[H2O], Vmax_2b, Km_chpthf, Km_h2o)
+    
+    # Calculate rate using two substrate MM equation
+    rate_2b = two_substrate_mm(A, B, Vmax_2b, Km_chpthf, Km_h2o)
     delta_2b = rate_2b * step_timespan
 
     # New concentrations as reaction proceeds
     pool[CHPTHF] -= delta_2b
     pool[H2O] -= delta_2b
     pool[CHOTHF] += delta_2b
-    pool[NADPH] += delta_2b
-    chpthf -= 0.1  # Example decrement for CH+THF
-    chothf += 0.1  # Example increment for CHOTHF
+    pool[H_PLUS] += delta_2b
 
-    pool[CHPTHF] = chpthf
-    pool[CHOTHF] = chothf
-    pool[H2O] = h2o
-    print('    chpthf:', chpthf, ' chothf:', chothf)
+    print('    chpthf:', pool[CHPTHF], ' h2o:', pool[H2O], ' chothf:', pool[CHOTHF], ' h_plus:', pool[H_PLUS]) 
     return
 
 
@@ -150,42 +129,27 @@ def mito_chothf_atp_to_formate_adp(pool, step, step_timespan):
 
     Step 3: [CHOTHF] + [ATP] <--> [Formate] + [ADP]
     """
-    chothf = pool[CHOTHF]  # Retrieve CHOTHF from the pool
-    atp = pool[ATP]  # Retrieve ATP from the pool
-    formate = pool[FORMATE]  # Retrieve Formate from the pool
-    adp = pool[ADP]  # Retrieve ADP from the pool
     print(' ', sys._getframe().f_code.co_name)
-    print('    chothf:', chothf, ' atp:', atp, ' formate:', formate, ' adp:', adp)
+    print('    chothf:', pool[CHOTHF], ' atp:', pool[ATP], ' formate:', pool[FORMATE], ' adp:', pool[ADP])
 
-    # DO: XHESIKA MATH
-
-    # Reaction 3 (Two substrate reaction)
     Vmax_3 = 1.0
     Km_chothf = 0.05
     Km_atp = 0.05
+    
+    A = pool[CHOTHF]
+    B = pool[ATP]
 
     # Calculate rate using two substrate MM equation
-    A = pool[CHPTHF]
-    B = pool[H2O]
-    rate_3 = two_substrate_mm(pool[CHPTHF], pool[H2O], Vmax_3, Km_chpthf, Km_h2o)
+    rate_3 = two_substrate_mm(A, B, Vmax_3, Km_chothf, Km_atp)
     delta_3 = rate_3 * step_timespan
 
     # New concentrations as reaction proceeds
-    pool[CHPTHF] -= delta_3
-    pool[H2O] -= delta_3
-    pool[CHOTHF] += delta_3
-    pool[NADPH] += delta_3
-
-    chothf -= 0.1  # Example decrement for CHOTHF
-    atp -= 0.1  # Example decrement for ATP
-    formate += 0.1  # Example increment for Formate
-    adp += 0.1  # Example increment for ADP
-
-    pool[CHOTHF] = chothf
-    pool[ATP] = atp
-    pool[FORMATE] = formate
-    pool[ADP] = adp
-    print('    chothf:', chothf, ' atp:', atp, ' formate:', formate, ' adp:', adp)
+    pool[CHOTHF] -= delta_3
+    pool[ATP] -= delta_3
+    pool[FORMATE] += delta_3
+    pool[ADP] += delta_3
+    
+    print('    chothf:', pool[CHOTHF], ' atp:', pool[ATP], ' formate:', pool[FORMATE], ' adp:', pool[ADP])
     return
 
 
@@ -203,6 +167,8 @@ def main():
         THF : 0.1,
         NADPP : 0.1,
         ATP : 0.1,
+        H_PLUS : 0.0,
+        H2O : 0.1,
         CH2THF : 0.0,
         GLY : 0.0,
         FORMATE : 0.0,
