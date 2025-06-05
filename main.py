@@ -153,9 +153,12 @@ def mito_chothf_atp_to_formate_adp(pool, step, step_timespan):
     return
 
 
-def main():
+def ser_to_formate_mm_equation(ser_conc):
     """
-    This is the main function that will be executed when the script is run.
+    This function calculates the concentration of Formate produced from a given concentration of SER
+    
+    ser_conc: Concentration of SER as input
+    Returns the concentration of Formate produced.
     """
     experiment_runtime = 0.1 # Experiment time in seconds
     experiment_timesteps = 4  # Resolution for the simulation
@@ -163,7 +166,7 @@ def main():
 
     # Initialize a pool of compounds with their concentrations
     mito_pool = {
-        SER : 0.1,
+        SER : ser_conc,
         THF : 0.1,
         NADPP : 0.1,
         ATP : 0.1,
@@ -199,6 +202,16 @@ def main():
 
     print('Final concentrations after the experiment:')
     pprint(mito_pool)
+    return mito_pool[FORMATE]  # Return the concentration of Formate produced
+
+
+def main():
+    """
+    This is the main function that will be executed when the script is run.
+    """
+    ser_concentration = 0.1
+    f = ser_to_formate_mm_equation(ser_concentration)
+    print('Formate produced from', ser_concentration, 'M SER:', f, 'M')
 
 # Execute the main function
 main()
