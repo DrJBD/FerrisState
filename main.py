@@ -38,10 +38,10 @@ def mito_ser_thf_to_ch2thf_gly(pool, step, step_timespan):
     print(' ', sys._getframe().f_code.co_name)
     print('    ser:', pool[SER], ' thf:', pool[THF], ' ch2thf:', pool[CH2THF], ' gly:', pool[GLY])
 
-    A = pool[SER] = 1963  #input  # Retrieve SER from the pool (uM)
-    B = pool[THF] = 20.8   # Retrieve THF from the pool (uM)
-    pool[Gly] = 1858 #Initial Gly concentration (uM)
-    pool[CH2THF] = 1.7 #Initial 5-10-CH2-THF conc (uM)
+    A = pool[SER]       #input  # Retrieve SER from the pool (uM)
+    B = pool[THF]       # Retrieve THF from the pool (uM)
+    #pool[Gly]          #Initial Gly concentration (uM)
+    #pool[CH2THF]       #Initial 5-10-CH2-THF conc (uM)
     
     #Constants for enzyme kinetics
     Vmax_1 = 11440 #uM/hour 
@@ -71,10 +71,10 @@ def mito_ch2thf_nadpp_to_chpthf_nadp(pool, step, step_timespan):
     print(' ', sys._getframe().f_code.co_name)
     print('    ch2thf:', pool[CH2THF], ' nadpp:', pool[NADPP], ' chpthf:', pool[CHPTHF], ' nadph:', pool[NADPH])
 
-    A = pool[CH2THF] =     #uM (This pool should resemble the updated concentrations (pool[CH2THF] += delta_1)
-    B = pool[NADPP] = 20   #uM Approximation
-    pool[CHPTHF] = 1.407   #Initial intermediate concentration (uM)
-    pool[NADPH] =  200     #uM Approximation
+    A = pool[CH2THF]     #uM (This pool should resemble the updated concentrations (pool[CH2THF] += delta_1)
+    B = pool[NADPP]    #uM Approximation
+    # pool[CHPTHF]    #Initial intermediate concentration (uM)
+    #pool[NADPH]      #uM Approximation
     
     #Constants for enzyme kinetics
     Vmax_2a =  15000    #unknown for the moment. Catalytic efficiency "kcat/Km" is 0.067 (1/sM). The given value is an approximation
@@ -106,13 +106,13 @@ def mito_chpthf_to_chothf(pool, step, step_timespan):
     print('    chpthf:', pool[CHPTHF], ' h2o:', pool[H2O], ' chothf:', pool[CHOTHF], ' h_plus:', pool[H_PLUS]) 
     
     Vmax_2b = 20000  #uM/h 
-    Km_chpthf = 0.05  #uM Approximation
+    Km_chpthf = 50  #uM Approximation
     Km_h2o = 0.001    #uM Approximation
     
-    A = pool[CHPTHF] =     # updated values from "pool[CHPTHF] += delta_2a"
-    B = pool[H2O] = 40000  #Excess (uM). Approximation
-    pool[CHOTHF] = 7.0     #Initial concentration
-    pool[H_PLUS] = 10000   #Excess (uM). Approximation. 
+    A = pool[CHPTHF]     # updated values from "pool[CHPTHF] += delta_2a"
+    B = pool[H2O]        #Excess (uM). Approximation
+    #pool[CHOTHF]        #Initial concentration
+    #pool[H_PLUS]        #Excess (uM). Approximation. 
     
     # Calculate rate using two substrate MM equation
     rate_2b = two_substrate_mm(A, B, Vmax_2b, Km_chpthf, Km_h2o)
@@ -142,10 +142,10 @@ def mito_chothf_atp_to_formate_adp(pool, step, step_timespan):
     Km_chothf = 50      #uM Approximation
     Km_atp = 40         #uM
     
-    A = pool[CHOTHF] =      #Updated (uM)
-    B = pool[ATP] = 300     #Excess (uM) Approximation
-    pool[FORMATE] = 0.0     #(uM) If we're trying to isolate the net production of formate
-    pool[ADP] =  100        #Excess (uM) Approximation
+    A = pool[CHOTHF]       #Updated (uM)
+    B = pool[ATP]          #Excess (uM) Approximation
+    #pool[FORMATE]          #(uM) If we're trying to isolate the net production of formate
+    #pool[ADP]              #Excess (uM) Approximation
     
     # Calculate rate using two substrate MM equation
     rate_3 = two_substrate_mm(A, B, Vmax_3, Km_chothf, Km_atp)
