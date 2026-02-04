@@ -10,6 +10,7 @@ NADPP = 'NADP+'
 ATP = 'ATP'
 CH2THF = 'CH2THF'
 GLY = 'GLY'
+H_PLUS = 'H+'
 FORMATE = 'Formate'
 ADP = 'ADP'
 CHOTHF = 'CHOTHF'
@@ -17,21 +18,7 @@ CHPTHF = 'CH+THF'
 NADPH = 'NADPH'
 H2O = 'H2O'
 
-def mito_ser_thf_to_ch2thf_gly(pool, step, step_timespan):
-    """
-    This function represents the first step in a biochemical pathway.
-    It converts SER and THF into CH2THF and GLY.
-
-    Step 1: [SER] + [THF] <--> [CH2THF] + [GLY]
-    """
-    ser = pool[SER]  # Retrieve SER from the pool
-    thf = pool[THF]  # Retrieve THF from the pool
-    ch2thf = pool[CH2THF]  # Contribute CH2THF to the pool
-    gly = pool[GLY]  # Contribute GLY to the pool
-    print(' ', sys._getframe().f_code.co_name)
-    print('    ser:', ser, ' thf:', thf, ' ch2thf:', ch2thf, ' gly:', gly)
-
-def two_substrate_mm(A, B, Km_A, Km_B):
+def two_substrate_mm(A, B, Km_A, Km_B, Vmax):
     """
     This function computes the rate for a two-substrate reaction
     A: Concentration of substrate A
@@ -41,18 +28,28 @@ def two_substrate_mm(A, B, Km_A, Km_B):
     """
     return (Vmax * A * B) / (Km_A * B + Km_B * A + A * B)
 
+def mito_ser_thf_to_ch2thf_gly(pool, step, step_timespan):
+    """
+    This function represents the first step in a biochemical pathway.
+    It converts SER and THF into CH2THF and GLY.
 
-    # DO: XHESIKA MATH
+    Step 1: [SER] + [THF] <--> [CH2THF] + [GLY]
+    """
+    print(' ', sys._getframe().f_code.co_name)
+    print('    ser:', pool[SER], ' thf:', pool[THF], ' ch2thf:', pool[CH2THF], ' gly:', pool[GLY])
 
-#Constants for enzyme kinetics
-    Vmax_1 = 1.0
-    Km_ser = 0.05
-    Km_thf = 0.05
+    A = pool[SER]       #input  # Retrieve SER from the pool (uM)
+    B = pool[THF]       # Retrieve THF from the pool (uM)
+    #pool[Gly]          #Initial Gly concentration (uM)
+    #pool[CH2THF]       #Initial 5-10-CH2-THF conc (uM)
+    
+    #Constants for enzyme kinetics
+    Vmax_1 = 11440 #uM/hour 
+    Km_ser = 600 #uM
+    Km_thf = 50  #uM
 
-#Caculate rate using two substrate MM Equation
-    A = pool[SER]
-    B = pool[THF]
-    rate_1 = two_substrate_mm(A, B, Km_ser, Km_thf)
+    #Caculate rate using two substrate MM Equation
+    rate_1 = two_substrate_mm(A, B, Km_ser, Km_thf, Vmax_1)
     delta_1 = rate_1 * step_timespan
 
     pool[SER] -= delta_1
@@ -60,17 +57,7 @@ def two_substrate_mm(A, B, Km_A, Km_B):
     pool[CH2THF] += delta_1
     pool[GLY] += delta_1
 
-    ser = ser - 0.1  # Example decrement for SER
-    thf = thf - 0.1  # Example decrement for THF
-    ch2thf = ch2thf + 0.1  # Example increment for CH2THF
-    gly = gly + 0.1  # Example increment for GLY
-
-    pool[SER] = ser
-    pool[THF] = thf
-    pool[CH2THF] = ch2thf
-    pool[GLY] = gly
-
-    print('    ser:', ser, ' thf:', thf, ' ch2thf:', ch2thf, ' gly:', gly)
+    print('    ser:', pool[SER], ' thf:', pool[THF], ' ch2thf:', pool[CH2THF], ' gly:', pool[GLY])
     return
 
 
@@ -79,25 +66,23 @@ def mito_ch2thf_nadpp_to_chpthf_nadp(pool, step, step_timespan):
     This function represents the second step in a biochemical pathway.
     It converts CH2THF and NADP+ into CH+THF and NADPH.
 
-    Step 2a: [CH2THF] + [NADP+] <--> [CH+THF] + [NADPH]
+    Step 2a: [CH2THF] + [NADP+] <--> [CH+THF] + [NADPH] 
     """
-    ch2thf = pool[CH2THF]  # Retrieve CH2THF from the pool
-    nadpp = pool[NADPP]  # Retrieve NADP+ from the pool
-    chpthf = pool[CHPTHF]  # Contribute CH+THF from the pool
-    nadph = pool[NADPH]  # Contribute NADPH from the pool
     print(' ', sys._getframe().f_code.co_name)
-    print('    ch2thf:', ch2thf, ' nadpp:', nadpp, ' chpthf:', chpthf, ' nadph:', nadph)
+    print('    ch2thf:', pool[CH2THF], ' nadpp:', pool[NADPP], ' chpthf:', pool[CHPTHF], ' nadph:', pool[NADPH])
 
-    # DO: XHESIKA MATH
-
-    Vmax_2a = 1.0
-    Km_ch2thf = 0.05
-    Km_nadpp = 0.05
+    A = pool[CH2THF]     #uM (This pool should resemble the updated concentrations (pool[CH2THF] += delta_1)
+    B = pool[NADPP]    #uM Approximation
+    # pool[CHPTHF]    #Initial intermediate concentration (uM)
+    #pool[NADPH]      #uM Approximation
+    
+    #Constants for enzyme kinetics
+    Vmax_2a =  15000    #unknown for the moment. Catalytic efficiency "kcat/Km" is 0.067 (1/sM). The given value is an approximation
+    Km_ch2thf = 50 #uM
+    Km_nadpp = 537 #uM
 
     # Calculate rate using two substrate MM equation
-    A = pool[CH2THF]
-    B = pool[NADPP]
-    rate_2a = two_substrate_mm(pool[CH2THF], pool[NADPP], Vmax_2a, Km_ch2thf, Km_nadpp)
+    rate_2a = two_substrate_mm(A, B, Vmax_2a, Km_ch2thf, Km_nadpp)
     delta_2a = rate_2a * step_timespan
 
     # New concentrations as reaction proceeds
@@ -105,18 +90,8 @@ def mito_ch2thf_nadpp_to_chpthf_nadp(pool, step, step_timespan):
     pool[NADPP] -= delta_2a
     pool[CHPTHF] += delta_2a
     pool[NADPH] += delta_2a
-
-
-    ch2thf -= 0.1  # Example decrement for CH2THF
-    nadpp -= 0.1  # Example decrement for NADP+
-    chpthf += 0.1  # Example increment for CH+THF
-    nadph += 0.1  # Example increment for NADPH
-
-    pool[CH2THF] = ch2thf
-    pool[NADPP] = nadpp
-    pool[CHPTHF] = chpthf
-    pool[NADPH] = nadph
-    print('    ch2thf:', ch2thf, ' nadpp:', nadpp, ' chpthf:', chpthf, ' nadph:', nadph)
+    
+    print('    ch2thf:', pool[CH2THF], ' nadpp:', pool[NADPP], ' chpthf:', pool[CHPTHF], ' nadph:', pool[NADPH])
     return
 
 
@@ -125,37 +100,31 @@ def mito_chpthf_to_chothf(pool, step, step_timespan):
     This function represents the second part of the second step in a biochemical pathway.
     It converts CH+THF into CHOTHF.
 
-    Step 2b: [CH+THF] <--> [CHOTHF]
+    Step 2b: [CH+THF] + [H2O] <--> [CHOTHF] + [H+]
     """
-    chpthf = pool[CHPTHF]  # Retrieve CH+THF from the pool
-    chothf = pool[CHOTHF]  # Retrieve CHOTHF from the pool
     print(' ', sys._getframe().f_code.co_name)
-    print('    chpthf:', chpthf, ' chothf:', chothf)
-
-    # DO: XHESIKA MATH
-
-    Vmax_2b = 1.0
-    Km_chpthf = 0.05
-    Km_h2o = 0.05
-
+    print('    chpthf:', pool[CHPTHF], ' h2o:', pool[H2O], ' chothf:', pool[CHOTHF], ' h_plus:', pool[H_PLUS]) 
+    
+    Vmax_2b = 20000  #uM/h 
+    Km_chpthf = 50  #uM Approximation
+    Km_h2o = 0.001    #uM Approximation
+    
+    A = pool[CHPTHF]     # updated values from "pool[CHPTHF] += delta_2a"
+    B = pool[H2O]        #Excess (uM). Approximation
+    #pool[CHOTHF]        #Initial concentration
+    #pool[H_PLUS]        #Excess (uM). Approximation. 
+    
     # Calculate rate using two substrate MM equation
-    A = pool[CHPTHF]
-    B = pool[H2O]
-    rate_2b = two_substrate_mm(pool[CHPTHF], pool[H2O], Vmax_2b, Km_chpthf, Km_h2o)
+    rate_2b = two_substrate_mm(A, B, Vmax_2b, Km_chpthf, Km_h2o)
     delta_2b = rate_2b * step_timespan
 
     # New concentrations as reaction proceeds
     pool[CHPTHF] -= delta_2b
     pool[H2O] -= delta_2b
     pool[CHOTHF] += delta_2b
-    pool[NADPH] += delta_2b
-    chpthf -= 0.1  # Example decrement for CH+THF
-    chothf += 0.1  # Example increment for CHOTHF
+    pool[H_PLUS] += delta_2b
 
-    pool[CHPTHF] = chpthf
-    pool[CHOTHF] = chothf
-    pool[H2O] = h2o
-    print('    chpthf:', chpthf, ' chothf:', chothf)
+    print('    chpthf:', pool[CHPTHF], ' h2o:', pool[H2O], ' chothf:', pool[CHOTHF], ' h_plus:', pool[H_PLUS]) 
     return
 
 
@@ -166,66 +135,58 @@ def mito_chothf_atp_to_formate_adp(pool, step, step_timespan):
 
     Step 3: [CHOTHF] + [ATP] <--> [Formate] + [ADP]
     """
-    chothf = pool[CHOTHF]  # Retrieve CHOTHF from the pool
-    atp = pool[ATP]  # Retrieve ATP from the pool
-    formate = pool[FORMATE]  # Retrieve Formate from the pool
-    adp = pool[ADP]  # Retrieve ADP from the pool
     print(' ', sys._getframe().f_code.co_name)
-    print('    chothf:', chothf, ' atp:', atp, ' formate:', formate, ' adp:', adp)
+    print('    chothf:', pool[CHOTHF], ' atp:', pool[ATP], ' formate:', pool[FORMATE], ' adp:', pool[ADP])
 
-    # DO: XHESIKA MATH
-
-    # Reaction 3 (Two substrate reaction)
-    Vmax_3 = 1.0
-    Km_chothf = 0.05
-    Km_atp = 0.05
-
+    Vmax_3 = 11440      #uM/h Approximation.
+    Km_chothf = 50      #uM Approximation
+    Km_atp = 40         #uM
+    
+    A = pool[CHOTHF]       #Updated (uM)
+    B = pool[ATP]          #Excess (uM) Approximation
+    #pool[FORMATE]          #(uM) If we're trying to isolate the net production of formate
+    #pool[ADP]              #Excess (uM) Approximation
+    
     # Calculate rate using two substrate MM equation
-    A = pool[CHPTHF]
-    B = pool[H2O]
-    rate_3 = two_substrate_mm(pool[CHPTHF], pool[H2O], Vmax_3, Km_chpthf, Km_h2o)
+    rate_3 = two_substrate_mm(A, B, Vmax_3, Km_chothf, Km_atp)
     delta_3 = rate_3 * step_timespan
 
     # New concentrations as reaction proceeds
-    pool[CHPTHF] -= delta_3
-    pool[H2O] -= delta_3
-    pool[CHOTHF] += delta_3
-    pool[NADPH] += delta_3
-
-    chothf -= 0.1  # Example decrement for CHOTHF
-    atp -= 0.1  # Example decrement for ATP
-    formate += 0.1  # Example increment for Formate
-    adp += 0.1  # Example increment for ADP
-
-    pool[CHOTHF] = chothf
-    pool[ATP] = atp
-    pool[FORMATE] = formate
-    pool[ADP] = adp
-    print('    chothf:', chothf, ' atp:', atp, ' formate:', formate, ' adp:', adp)
+    pool[CHOTHF] -= delta_3
+    pool[ATP] -= delta_3
+    pool[FORMATE] += delta_3    #Outcome
+    pool[ADP] += delta_3
+    
+    print('    chothf:', pool[CHOTHF], ' atp:', pool[ATP], ' formate:', pool[FORMATE], ' adp:', pool[ADP])
     return
 
 
-def main():
+def ser_to_formate_mm_equation(ser_conc):
     """
-    This is the main function that will be executed when the script is run.
+    This function calculates the concentration of Formate produced from a given concentration of SER
+    
+    ser_conc: Concentration of SER as input
+    Returns the concentration of Formate produced.
     """
-    experiment_runtime = 0.1 # Experiment time in seconds
-    experiment_timesteps = 4  # Resolution for the simulation
+    experiment_runtime = 1 # Experiment time in seconds
+    experiment_timesteps = 20  # Resolution for the simulation
     step_timespan = experiment_runtime / experiment_timesteps
 
     # Initialize a pool of compounds with their concentrations
     mito_pool = {
-        SER : 0.1,
-        THF : 0.1,
-        NADPP : 0.1,
-        ATP : 0.1,
-        CH2THF : 0.0,
-        GLY : 0.0,
+        SER : ser_conc,
+        THF : 20.8,
+        NADPP : 20,
+        ATP : 300,
+        H_PLUS : 10000,
+        H2O : 40000,
+        CH2THF : 50,
+        GLY : 1858,
         FORMATE : 0.0,
-        ADP : 0.0,
-        CHOTHF : 0.0,
-        CHPTHF : 0.0,
-        NADPH : 0.0
+        ADP : 100,
+        CHOTHF : 1963,
+        CHPTHF : 1.407,
+        NADPH : 200
     }
 
     print('Initial concentrations:')
@@ -249,6 +210,16 @@ def main():
 
     print('Final concentrations after the experiment:')
     pprint(mito_pool)
+    return mito_pool[FORMATE]  # Return the concentration of Formate produced
+
+
+def main():
+    """
+    This is the main function that will be executed when the script is run.
+    """
+    ser_concentration = 1963
+    f = ser_to_formate_mm_equation(ser_concentration)
+    print('Formate produced from', ser_concentration, 'M SER:', f, 'M')
 
 # Execute the main function
 main()
