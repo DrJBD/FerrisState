@@ -1,6 +1,7 @@
 import sys
 from pprint import pprint
 from ModelParameters import *
+from GlycineCleavageSystem import GlycineCleavageSystem
 
 class SerToFormateMmModel:
 
@@ -41,7 +42,7 @@ class SerToFormateMmModel:
         Km_ser = 600  # uM
         Km_thf = 50  # uM
 
-        # Caculate rate using two substrate MM Equation
+        # Calculate rate using two substrate MM Equation
         rate_1 = self.two_substrate_mm(A, B, Km_ser, Km_thf, Vmax_1)
         delta_1 = rate_1 * step_timespan
 
@@ -49,6 +50,9 @@ class SerToFormateMmModel:
         pool[THF] -= delta_1
         pool[CH2THF] += delta_1
         pool[GLY] += delta_1
+
+        Cleavage = GlycineCleavageSystem()
+        Cleavage.mito_gcs_step(pool, step_timespan)
 
         print('    ser:', pool[SER], ' thf:', pool[THF], ' ch2thf:', pool[CH2THF], ' gly:', pool[GLY])
         return

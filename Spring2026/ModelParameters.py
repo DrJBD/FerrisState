@@ -13,6 +13,9 @@ CHOTHF = 'CHOTHF'
 CHPTHF = 'CH+THF'
 NADPH = 'NADPH'
 H2O = 'H2O'
+NH3 = 'NH3'
+CO2 = 'CO2'
+
 
 EXPERIMENT_RUNTIME_IN_SEC = 1  # Experiment time in seconds
 EXPERIMENT_TIMESTEPS = 20  # Resolution for the simulation
