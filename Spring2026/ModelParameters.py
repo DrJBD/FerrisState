@@ -16,9 +16,12 @@ H2O = 'H2O'
 NH3 = 'NH3'
 CO2 = 'CO2'
 
+KM_SER_MAX = 430.0      # µM
+ALPHA_KM_SER = 158.0   # µM
+K05_THF = 250.0        # µM
 
-EXPERIMENT_RUNTIME_IN_SEC = 1  # Experiment time in seconds
-EXPERIMENT_TIMESTEPS = 20  # Resolution for the simulation
+EXPERIMENT_RUNTIME_IN_HOURS = 1  # Experiment time in seconds
+EXPERIMENT_TIMESTEPS = 1800   # Number of samples in the experiment (e.g., 1800 for 1 sample every 2 seconds over 1 hour)
 
 INITIAL_SER_CONCENTRATION = 1963  # Concentration of SER in uM
 
@@ -36,6 +39,7 @@ MITO_POOL = {
     ADP: 100,
     CHOTHF: 1963,
     CHPTHF: 1.407,
-    NADPH: 200
+    NADPH: 200,
+    CO2: 0.0
 }
 

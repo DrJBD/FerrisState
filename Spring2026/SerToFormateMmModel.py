@@ -11,152 +11,268 @@ class SerToFormateMmModel:
         self.experiment_timesteps = experiment_timesteps
         self.ran = False  # Flag to indicate if the model has been run
 
-    def two_substrate_mm(self, A, B, Km_A, Km_B, Vmax):
+    def km_ser_app_from_thf(self, thf):
         """
-        This function computes the rate for a two-substrate reaction
-        A: Concentration of substrate A
-        B: Concentration of substrate B
-        Vmax: Maximum rate of reaction.
-        Km_A, Km_B: Taken from literature. Constants. Dictate the concentration of substrates as half-Vmax is reached.
-        """
-        return (Vmax * A * B) / (Km_A * B + Km_B * A + A * B)
+        Apparent Km for serine as a function of THF concentration.
+        Based on Fig. 2F.
 
+        thf: [THF] in µM
+        returns: Km_ser_app in µM
+        """
+        return (
+                ALPHA_KM_SER
+                + (KM_SER_MAX - ALPHA_KM_SER) * K05_THF / (K05_THF + thf)
+        )
+
+    def shmt2_forward_inhibited(self, thf, ser, Vmaxf, aKm_thf, Ki_thf, Km_ser_app, Ki_ser):
+        """
+        Calculates the rate of the SHMT2 forward reaction with substrate inhibition.
+        Ser + THF --> CH2THF + Gly
+        """
+        thf_term = thf / (aKm_thf + thf * (1 + thf / Ki_thf))
+        ser_term = ser / (Km_ser_app + ser * (1 + ser / Ki_ser))
+        return Vmaxf * thf_term * ser_term
+
+    def shmt2_reverse_rate(self, gly, ch2thf, Vmaxr, aKm_gly, Km_ch2thf):
+        """
+        Calculates the rate of the SHMT2 reverse reaction with Michaelis-Menten kinetics.
+        Gly + CH2THF --> Ser + THF
+        """
+        gly_term = gly / (aKm_gly + gly)
+        ch2thf_term = ch2thf / (Km_ch2thf + ch2thf)
+        return Vmaxr * gly_term * ch2thf_term
 
     def mito_ser_thf_to_ch2thf_gly(self, pool, step, step_timespan):
         """
-        This function represents the first step in a biochemical pathway.
-        It converts SER and THF into CH2THF and GLY.
+            This function models the reversible reaction:
+            [SER] + [THF] --> [CH2THF] + [GLY]
+            """
 
-        Step 1: [SER] + [THF] <--> [CH2THF] + [GLY]
-        """
         print(' ', sys._getframe().f_code.co_name)
         print('    ser:', pool[SER], ' thf:', pool[THF], ' ch2thf:', pool[CH2THF], ' gly:', pool[GLY])
 
-        A = pool[SER]  # input  # Retrieve SER from the pool (uM)
-        B = pool[THF]  # Retrieve THF from the pool (uM)
-        # pool[Gly]          #Initial Gly concentration (uM)
-        # pool[CH2THF]       #Initial 5-10-CH2-THF conc (uM)
+        # Constants
+        Vmax_f = 9756  # µM/h (Calculated. See word document)
+        Vmax_r = 3608  # µM/h (Calculated. See word document)
+        aKm_thf = 20  # µM (+/- 8)
+        Ki_thf = 99  # µM (+/- 17)
+        Ki_ser = 602  # µM (+/- 370)
+        aKm_gly = 469.8  # µM (Calculated. See word document)
+        Km_ch2thf = 980  # µM (Calculated. See word document)
 
-        # Constants for enzyme kinetics
-        Vmax_1 = 11440  # uM/hour
-        Km_ser = 600  # uM
-        Km_thf = 50  # uM
+        # Concentrations
+        thf = pool[THF]
+        Km_ser_app = self.km_ser_app_from_thf(thf)
+        ser = pool[SER]
+        gly = pool[GLY]
+        ch2thf = pool[CH2THF]
 
-        # Calculate rate using two substrate MM Equation
-        rate_1 = self.two_substrate_mm(A, B, Km_ser, Km_thf, Vmax_1)
-        delta_1 = rate_1 * step_timespan
+        # Rates
+        rate_forward = self.shmt2_forward_inhibited(thf, ser, Vmax_f, aKm_thf, Ki_thf, Km_ser_app, Ki_ser)
+        rate_reverse = self.shmt2_reverse_rate(gly, ch2thf, Vmax_r, aKm_gly, Km_ch2thf)
+        net_rate = rate_forward - rate_reverse
+        dt_hr = step_timespan / 3600.0
+        delta = net_rate * dt_hr
 
-        pool[SER] -= delta_1
-        pool[THF] -= delta_1
-        pool[CH2THF] += delta_1
-        pool[GLY] += delta_1
+        # Update pool
+        pool[SER] -= delta
+        pool[THF] -= delta
+        pool[CH2THF] += delta
+        pool[GLY] += delta
 
-        Cleavage = GlycineCleavageSystem()
-        Cleavage.mito_gcs_step(pool, step_timespan)
+        CleavageSystem = GlycineCleavageSystem()
+        CleavageSystem.mito_gcs_step(pool, step_timespan)
 
+        print('    rate_fwd:', rate_forward, ' rate_rev:', rate_reverse, ' net_rate:', net_rate)
         print('    ser:', pool[SER], ' thf:', pool[THF], ' ch2thf:', pool[CH2THF], ' gly:', pool[GLY])
         return
 
-
-    def mito_ch2thf_nadpp_to_chpthf_nadp(self, pool, step, step_timespan):
+    def reversible_two_substrate_mm(self,
+            S_f, F_f, Vmax_f, Km_Sf, Km_Ff,
+            S_r, F_r, Vmax_r, Km_Sr, Km_Fr
+    ):
         """
-        This function represents the second step in a biochemical pathway.
-        It converts CH2THF and NADP+ into CH+THF and NADPH.
+        Calculates the net velocity of a reversible (F&R) two-substrate reaction (S&F).
+        This is the general form.
 
-        Step 2a: [CH2THF] + [NADP+] <--> [CH+THF] + [NADPH]
+        Parameters:
+        - S_f, F_f: concentrations of substrates in the forward reaction
+        - Vmax_f, Km_Sf, Km_Ff: forward reaction constants
+        - S_r, F_r: concentrations of substrates in the reverse reaction
+        - Vmax_r, Km_Sr, Km_Fr: reverse reaction constants
+
         """
+        forward = Vmax_f * (S_f / (Km_Sf + S_f)) * (F_f / (Km_Ff + F_f))
+        reverse = Vmax_r * (S_r / (Km_Sr + S_r)) * (F_r / (Km_Fr + F_r))
+        return forward - reverse
+
+    def mito_ch2thf_nadpp_to_chpthf_nadph(self, pool, step, step_timespan):
+        """
+        Reaction 2a: CH2THF + NADP⁺ <--> CH⁺THF + NADPH
+        Modeled using reversible two-substrate Michaelis-Menten kinetics.
+        """
+
         print(' ', sys._getframe().f_code.co_name)
         print('    ch2thf:', pool[CH2THF], ' nadpp:', pool[NADPP], ' chpthf:', pool[CHPTHF], ' nadph:', pool[NADPH])
 
-        A = pool[CH2THF]  # uM (This pool should resemble the updated concentrations (pool[CH2THF] += delta_1)
-        B = pool[NADPP]  # uM Approximation
-        # pool[CHPTHF]    #Initial intermediate concentration (uM)
-        # pool[NADPH]      #uM Approximation
+        # Constants forward
+        Vmax_f = 2106  # µM/h [5]
+        Km_ch2thf = 153  # µM [6] Pentaglutamated
+        Km_nadpp = 537  # µM [6]
 
-        # Constants for enzyme kinetics
-        Vmax_2a = 15000  # unknown for the moment. Catalytic efficiency "kcat/Km" is 0.067 (1/sM). The given value is an approximation
-        Km_ch2thf = 50  # uM
-        Km_nadpp = 537  # uM
+        # Constants reverse
+        Vmax_r = 8000
+        Km_chpthf = 80
+        Km_nadph = 537  # µM
 
-        # Calculate rate using two substrate MM equation
-        rate_2a = self.two_substrate_mm(A, B, Vmax_2a, Km_ch2thf, Km_nadpp)
-        delta_2a = rate_2a * step_timespan
+        # Concentrations
+        ch2thf = pool[CH2THF]
+        nadpp = pool[NADPP]
+        chpthf = pool[CHPTHF]
+        nadph = pool[NADPH]
 
-        # New concentrations as reaction proceeds
-        pool[CH2THF] -= delta_2a
-        pool[NADPP] -= delta_2a
-        pool[CHPTHF] += delta_2a
-        pool[NADPH] += delta_2a
+        # Net reversible rate
+        net_rate = self.reversible_two_substrate_mm(
+            S_f=ch2thf, F_f=nadpp, Vmax_f=Vmax_f, Km_Sf=Km_ch2thf, Km_Ff=Km_nadpp,
+            S_r=chpthf, F_r=nadph, Vmax_r=Vmax_r, Km_Sr=Km_chpthf, Km_Fr=Km_nadph
+        )
 
+        dt_hr = step_timespan / 3600.0
+        delta = net_rate * dt_hr
+
+        # Update pool
+        pool[CH2THF] -= delta
+        pool[NADPP] -= delta
+        pool[CHPTHF] += delta
+        pool[NADPH] += delta
+
+        print('    rate_net:', net_rate)
         print('    ch2thf:', pool[CH2THF], ' nadpp:', pool[NADPP], ' chpthf:', pool[CHPTHF], ' nadph:', pool[NADPH])
         return
-
 
     def mito_chpthf_to_chothf(self, pool, step, step_timespan):
         """
-        This function represents the second part of the second step in a biochemical pathway.
-        It converts CH+THF into CHOTHF.
-
-        Step 2b: [CH+THF] + [H2O] <--> [CHOTHF] + [H+]
+        Reaction 2b: CH+THF + H2O <-->  CHOTHF + H+
+        Modeled using reversible two-substrate Michaelis-Menten kinetics.
         """
+
         print(' ', sys._getframe().f_code.co_name)
-        print('    chpthf:', pool[CHPTHF], ' h2o:', pool[H2O], ' chothf:', pool[CHOTHF], ' h_plus:', pool[H_PLUS])
+        print('    chpthf:', pool[CHPTHF], ' h2o:', pool[H2O], ' chothf:', pool[CHOTHF], ' h+ :', pool[H_PLUS])
 
-        Vmax_2b = 20000  # uM/h
-        Km_chpthf = 50  # uM Approximation
-        Km_h2o = 0.001  # uM Approximation
+        # Constants (example estimates; refine with experimental values if available)
+        Vmax_f = 8000  # µM/h
+        Km_chpthf = 60  # µM
+        Km_h2o = 40000  # µM (approx. cellular water conc.)
 
-        A = pool[CHPTHF]  # updated values from "pool[CHPTHF] += delta_2a"
-        B = pool[H2O]  # Excess (uM). Approximation
-        # pool[CHOTHF]        #Initial concentration
-        # pool[H_PLUS]        #Excess (uM). Approximation.
+        # Constants reverse
+        Vmax_r = 5000  # µM/h
+        Km_chothf = 120  # µM
+        Km_hplus = 10000  # µM (estimate)
 
-        # Calculate rate using two substrate MM equation
-        rate_2b = self.two_substrate_mm(A, B, Vmax_2b, Km_chpthf, Km_h2o)
-        delta_2b = rate_2b * step_timespan
+        # Concentrations
+        chpthf = pool[CHPTHF]
+        h2o = pool[H2O]
+        chothf = pool[CHOTHF]
+        hplus = pool[H_PLUS]
 
-        # New concentrations as reaction proceeds
-        pool[CHPTHF] -= delta_2b
-        pool[H2O] -= delta_2b
-        pool[CHOTHF] += delta_2b
-        pool[H_PLUS] += delta_2b
+        # Net rate using reversible two-substrate MM
+        net_rate = self.reversible_two_substrate_mm(
+            S_f=chpthf, F_f=h2o, Vmax_f=Vmax_f, Km_Sf=Km_chpthf, Km_Ff=Km_h2o,
+            S_r=chothf, F_r=hplus, Vmax_r=Vmax_r, Km_Sr=Km_chothf, Km_Fr=Km_hplus
+        )
 
-        print('    chpthf:', pool[CHPTHF], ' h2o:', pool[H2O], ' chothf:', pool[CHOTHF], ' h_plus:', pool[H_PLUS])
+        dt_hr = step_timespan # / 3600.0
+        delta = net_rate * dt_hr
+
+        # Update the pool
+        pool[CHPTHF] -= delta
+        pool[H2O] -= delta
+        pool[CHOTHF] += delta
+        pool[H_PLUS] += delta
+
+        print('    rate_net:', net_rate)
+        print('    chpthf:', pool[CHPTHF], ' h2o:', pool[H2O], ' chothf:', pool[CHOTHF], ' h+ :', pool[H_PLUS])
         return
-
 
     def mito_chothf_atp_to_formate_adp(self, pool, step, step_timespan):
         """
-        This function represents the third step in a biochemical pathway.
-        It converts CHOTHF and ATP into Formate and ADP.
+            Reaction 3: CHOTHF + ATP <-->  Formate + THF + ADP
+            Modeled using reversible two-substrate Michaelis-Menten kinetics.
+            """
 
-        Step 3: [CHOTHF] + [ATP] <--> [Formate] + [ADP]
-        """
         print(' ', sys._getframe().f_code.co_name)
         print('    chothf:', pool[CHOTHF], ' atp:', pool[ATP], ' formate:', pool[FORMATE], ' adp:', pool[ADP])
 
-        Vmax_3 = 11440  # uM/h Approximation.
-        Km_chothf = 50  # uM Approximation
-        Km_atp = 40  # uM
+        # Constants (approximate; adjust based on literature)
+        Vmax_f = 12000  # µM/h
+        Km_chothf = 100  # µM
+        Km_atp = 300  # µM
 
-        A = pool[CHOTHF]  # Updated (uM)
-        B = pool[ATP]  # Excess (uM) Approximation
-        # pool[FORMATE]          #(uM) If we're trying to isolate the net production of formate
-        # pool[ADP]              #Excess (uM) Approximation
+        # Constants reverse
+        Vmax_r = 7000  # µM/h
+        Km_formate = 50  # µM
+        Km_adp = 100  # µM
 
-        # Calculate rate using two substrate MM equation
-        rate_3 = self.two_substrate_mm(A, B, Vmax_3, Km_chothf, Km_atp)
-        delta_3 = rate_3 * step_timespan
+        # Concentrations
+        chothf = pool[CHOTHF]
+        atp = pool[ATP]
+        formate = pool[FORMATE]
+        thf = pool[THF]
+        adp = pool[ADP]
 
-        # New concentrations as reaction proceeds
-        pool[CHOTHF] -= delta_3
-        pool[ATP] -= delta_3
-        pool[FORMATE] += delta_3  # Outcome
-        pool[ADP] += delta_3
+        # Net rate
+        net_rate = self.reversible_two_substrate_mm(
+            S_f=chothf, F_f=atp, Vmax_f=Vmax_f, Km_Sf=Km_chothf, Km_Ff=Km_atp,
+            S_r=formate, F_r=adp, Vmax_r=Vmax_r, Km_Sr=Km_formate, Km_Fr=Km_adp
+        )
 
+        dt_hr = step_timespan / 3600.0
+        delta = net_rate * dt_hr
+
+        # Update pool
+        pool[CHOTHF] -= delta
+        pool[ATP] -= delta
+        pool[FORMATE] += delta
+        pool[THF] += delta
+        pool[ADP] += delta
+
+        print('    rate_net:', net_rate)
         print('    chothf:', pool[CHOTHF], ' atp:', pool[ATP], ' formate:', pool[FORMATE], ' adp:', pool[ADP])
         return
 
+    def mito_fdh_dehydrogenase(self, pool, step, step_timespan):
+        """
+        FDH dehydrogenase activity:
+        Formate + NADP+ -> CO2 + NADPH
+        Irreversible two-substrate Michaelis-Menten
+        """
+
+        # Parameters
+        Vmax = 8640.0  # µM / hour
+        Km_formate = 3.2  # µM
+        Km_NADP = 1.1  # µM
+
+        # Substrate concentrations
+        formate = pool[FORMATE]
+        nadp = pool[NADPP]
+
+        # Rate law
+        rate = (
+                Vmax
+                * (formate / (Km_formate + formate))
+                * (nadp / (Km_NADP + nadp))
+        )
+
+        dt_hr = step_timespan / 3600.0 # seconds to hours
+        delta = rate * dt_hr
+
+        # Update pools
+        pool[FORMATE] -= delta
+        pool[NADPP] -= delta
+        pool[CO2] += delta
+        pool[NADPH] += delta
+
+        return rate
 
     def ser_to_formate_mm_equation(self, pool, experiment_runtime_in_sec, experiment_timesteps):
         """
@@ -171,18 +287,22 @@ class SerToFormateMmModel:
         step_timespan = experiment_runtime_in_sec / experiment_timesteps
         for step in range(0, experiment_timesteps):
             print('Step:', step, ' Timespan:', step_timespan)
-            # Step 1: [SER] + [THF] <--> [CH2THF] + [GLY]
+
             self.mito_ser_thf_to_ch2thf_gly(pool, step, step_timespan)
 
             # Step 2a: [CH2THF] + [NADP+] <--> [CH+THF] + [NADPH]
-            self.mito_ch2thf_nadpp_to_chpthf_nadp(pool, step, step_timespan)
+            self.mito_ch2thf_nadpp_to_chpthf_nadph(pool, step, step_timespan)
 
             # Step 2b: [CH+THF] <--> [CHOTHF]
             self.mito_chpthf_to_chothf(pool, step, step_timespan)
 
-            # Step 3: [CHOTHF] + [ATP] <--> [Formate] + [ADP]
+            # Step 3: [CHOTHF] + [ATP] <--> [Formate] + [ADP] + [THF]
             self.mito_chothf_atp_to_formate_adp(pool, step, step_timespan)
-            print()
+
+            # Step 4: [CHOTHF] + [NADP+] <--> [CO2] + [NADPH] + [THF]
+            self.mito_fdh_dehydrogenase(pool, step, step_timespan)
+
+            # print()
 
         print('Final concentrations after the experiment:')
         pprint(pool)

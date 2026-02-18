@@ -4,14 +4,14 @@ Full reaction representation using fixed literature flux.
 """
 
 from ModelParameters import *
+
 class GlycineCleavageSystem:
 
     def __init__(self):
-        self.ran = False  # Flag to indicate if the model has been run
+        pass  # Flag to indicate if the model has been run
 
     def mito_gcs_step(self, pool, step_timespan):
         """
-
         GLY + THF + NADP+ → CH2THF + CO2 + NH3 + NADPH
 
         Uses fixed flux (literature ~0.3 mM/h = 300 µM/h)
@@ -27,7 +27,7 @@ class GlycineCleavageSystem:
         # Fixed flux (µM/h)
         V_GCS = 300.0
 
-        dt_hr = step_timespan
+        dt_hr = step_timespan / 3600.0  # Convert time step from seconds to hours
         delta = V_GCS * dt_hr
 
         # Substrate consumption
