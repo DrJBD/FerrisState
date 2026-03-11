@@ -1,7 +1,11 @@
+"""
+Report which is a ReportingTable should be in the globals when running this.
+"""
 import sys
 from pprint import pprint
 from ModelParameters import *
 from GlycineCleavageSystem import GlycineCleavageSystem
+from ReportingTable import report
 
 class SerToFormateMmModel:
 
@@ -238,6 +242,13 @@ class SerToFormateMmModel:
 
         print('    rate_net:', net_rate)
         print('    chothf:', pool[CHOTHF], ' atp:', pool[ATP], ' formate:', pool[FORMATE], ' adp:', pool[ADP])
+        # stats = {
+        #     CHOTHF: pool[CHOTHF],
+        #     ATP: pool[ATP],
+        #     FORMATE: pool[FORMATE],
+        #     ADP: pool[ADP]
+        # }
+        # report.add_step(step, stats)
         return
 
     def mito_fdh_dehydrogenase(self, pool, step, step_timespan):
@@ -283,6 +294,7 @@ class SerToFormateMmModel:
         print('Initial concentrations:')
         pprint(pool)
         print()
+        report.add_step(0, pool.copy())
 
         step_timespan = experiment_runtime_in_sec / experiment_timesteps
         for step in range(0, experiment_timesteps):
@@ -302,7 +314,7 @@ class SerToFormateMmModel:
             # Step 4: [CHOTHF] + [NADP+] <--> [CO2] + [NADPH] + [THF]
             self.mito_fdh_dehydrogenase(pool, step, step_timespan)
 
-            # print()
+            report.add_step(step, pool.copy())
 
         print('Final concentrations after the experiment:')
         pprint(pool)
