@@ -13,7 +13,7 @@ def main():
     result_pool = model.run()
 
     report.pprint()
-    report.save_csv("Spring2026_report.csv")
+    report.save_plots()
     print('Formate produced from', INITIAL_SER_CONCENTRATION, 'M SER:', result_pool[FORMATE], 'M')
 
 # Execute the main function

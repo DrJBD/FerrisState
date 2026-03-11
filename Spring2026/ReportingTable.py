@@ -2,8 +2,11 @@
 Store the intermediate values of the simulation for end-of-run report generation.
 """
 import csv
-from pprint import pprint
+import os
+import pandas
+import matplotlib.pyplot as plt
 from ModelParameters import *
+from pprint import pprint
 
 class ReportingTable:
 
@@ -56,5 +59,35 @@ class ReportingTable:
                     row_cells[key] = concentrations[key]
                 writer.writerow(row_cells)
 
+
+    def save_plots(self):
+        # Load the CSV
+        filename = 'Spring2026_report.csv'
+        self.save_csv(filename)
+        df = pandas.read_csv(filename)
+
+        # First column is the x-axis (step)
+        x_col = df.columns[0]
+        data_cols = df.columns[1:]
+
+        # Output directory for plots
+        output_dir = "plots"
+        os.makedirs(output_dir, exist_ok=True)
+
+        for col in data_cols:
+            fig, ax = plt.subplots(figsize=(10, 5))
+            ax.plot(df[x_col], df[col], linewidth=1.5)
+            ax.set_xlabel(x_col.capitalize(), fontsize=12)
+            ax.set_ylabel(col, fontsize=12)
+            ax.set_title(col, fontsize=14)
+            ax.grid(True, linestyle="--", alpha=0.5)
+            plt.tight_layout()
+            # Sanitize filename
+            safe_name = col.replace("/", "_").replace("+", "plus").replace(" ", "_")
+            fig.savefig(os.path.join(output_dir, f"{safe_name}.png"), dpi=150)
+            plt.close(fig)
+            print(f"Saved plot for: {col}")
+
+        print(f"\nDone! {len(data_cols)} plots saved to '{output_dir}/'")
 
 report = ReportingTable()

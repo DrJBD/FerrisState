@@ -88,9 +88,9 @@ class SerToFormateMmModel:
         CleavageSystem.mito_gcs_step(pool, step_timespan)
 
         rates = {
-            'rate_fwd' : rate_forward,
-            'rate_rev' : rate_reverse,
-            'net_rate' : net_rate
+            'thf_to_ch2thf_rate_fwd' : rate_forward,
+            'thf_to_ch2thf_rate_rev' : rate_reverse,
+            'thf_to_ch2thf_net_rate' : net_rate
         }
         report.add_step(step, rates)
         pprint(f'mito_ser_thf_to_ch2thf_gly: {rates}')
