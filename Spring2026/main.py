@@ -13,7 +13,6 @@ def main():
     result_pool = model.run()
 
     report.pprint()
-    report.add_step(4, {'TEST':435})
     report.save_csv("Spring2026_report.csv")
     print('Formate produced from', INITIAL_SER_CONCENTRATION, 'M SER:', result_pool[FORMATE], 'M')
 
