@@ -20,7 +20,7 @@ KM_SER_MAX = 430.0      # µM
 ALPHA_KM_SER = 158.0   # µM
 K05_THF = 250.0        # µM
 
-EXPERIMENT_RUNTIME_IN_HOURS = 1  # Experiment time in seconds
+EXPERIMENT_RUNTIME_IN_HOURS = 1  # Experiment time will be divided by the number of timesteps
 EXPERIMENT_TIMESTEPS = 1800   # Number of samples in the experiment (e.g., 1800 for 1 sample every 2 seconds over 1 hour)
 
 INITIAL_SER_CONCENTRATION = 1963  # Concentration of SER in uM

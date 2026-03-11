@@ -1,6 +1,5 @@
 """
-Container class to store the intermediate values of the simulation for end-of-run
-report generation.
+Store the intermediate values of the simulation for end-of-run report generation.
 """
 import csv
 from pprint import pprint
@@ -14,18 +13,18 @@ class ReportingTable:
 
     def add_step(self, step, values):
         """
-        Add key/values as a step in the log table.  NOTE: Will merge if the step
-        has already been created.  New values will take priority.
+        Add key/values as a step in the log.  The values will merge into an existing entry if the step
+        has already been created.  New values take priority.
         """
         to_add = values.copy()
         if step in self.log:
-            to_add = to_add | values
+            to_add = to_add | self.log[step]
         self.log[step] = to_add
 
 
     def pprint(self):
         """
-        Pretty print the self.log variable and anything else we think to add.
+        Pretty print the self.log variable and anything else we need.
         """
         print(f"ReportingTable: KM_SER_MAX: {KM_SER_MAX}")
         print(f"ReportingTable: ALPHA_KM_SER: {ALPHA_KM_SER}")
@@ -42,10 +41,11 @@ class ReportingTable:
 
 
     def save_csv(self, filename):
+        # Get all the value names stored even if they are not in every step.  Will enter blanks in the CSV
         columns = set([v for values in self.log.values() for v in values])
+
         with open(filename, 'w', newline='') as f:
-            # Get the molecule names from the first entry
-            fieldnames = ['step'] + list(columns)
+            fieldnames = ['step'] + sorted(columns)
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
 
@@ -54,7 +54,7 @@ class ReportingTable:
                 row_cells['step'] = step
                 for key in concentrations:
                     row_cells[key] = concentrations[key]
-                writer.writerow({"step": step, **concentrations})
+                writer.writerow(row_cells)
 
 
 report = ReportingTable()
