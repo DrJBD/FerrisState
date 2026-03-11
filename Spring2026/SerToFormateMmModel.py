@@ -87,7 +87,13 @@ class SerToFormateMmModel:
         CleavageSystem = GlycineCleavageSystem()
         CleavageSystem.mito_gcs_step(pool, step_timespan)
 
-        print('    rate_fwd:', rate_forward, ' rate_rev:', rate_reverse, ' net_rate:', net_rate)
+        rates = {
+            'rate_fwd' : rate_forward,
+            'rate_rev' : rate_reverse,
+            'net_rate' : net_rate
+        }
+        report.add_step(step, rates)
+        pprint(f'mito_ser_thf_to_ch2thf_gly: {rates}')
         print('    ser:', pool[SER], ' thf:', pool[THF], ' ch2thf:', pool[CH2THF], ' gly:', pool[GLY])
         return
 

@@ -37,7 +37,7 @@ class ReportingTable:
             print('ReportingTable: No steps were added to the log')
         else:
             pprint(f'ReportingTable: Min step {min(self.log)}.  Max step {max(self.log)}')
-            pprint(self.log)
+            # pprint(self.log)
 
 
     def save_csv(self, filename):
