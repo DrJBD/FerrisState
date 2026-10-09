@@ -29,9 +29,9 @@ class ReportingTable:
         """
         Pretty print the self.log variable and anything else we need.
         """
-        print(f"ReportingTable: KM_SER_MAX: {KM_SER_MAX}")
-        print(f"ReportingTable: ALPHA_KM_SER: {ALPHA_KM_SER}")
-        print(f"ReportingTable: K05_THF: {K05_THF}")
+        print(f"ReportingTable: Step1_KM_SER_MAX: {Step1_KM_SER_MAX}")
+        print(f"ReportingTable: Step1_ALPHA_KM_SER: {Step1_ALPHA_KM_SER}")
+        print(f"ReportingTable: Step1_K05_THF: {Step1_K05_THF}")
         print(f"ReportingTable: EXPERIMENT_RUNTIME_IN_HOURS: {EXPERIMENT_RUNTIME_IN_HOURS}")
         print(f"ReportingTable: EXPERIMENT_TIMESTEPS: {EXPERIMENT_TIMESTEPS}")
         print(f"ReportingTable: INITIAL_SER_CONCENTRATION: {INITIAL_SER_CONCENTRATION}")

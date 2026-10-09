@@ -976,3 +976,11 @@ class SerToFormateMmModel:
         pprint(final_state)
 
         return final_state
+
+    def run(self):
+        if not self.ran:
+            self.ran = True
+            return self.ser_to_formate_mm_equation(self.mito_pool, self.experiment_runtime_in_sec, self.experiment_timesteps)
+        else:
+            print("Model has already been run. Returning the previous results.")
+            return self.mito_pool
